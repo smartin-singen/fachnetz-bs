@@ -5,6 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=800px, initial-scale=1.0">
     <title>Navigation</title>
+    <style>
+        ul { list-style-type: none; }
+    </style>
+
     <script type="text/javascript">
         //<![CDATA[
         destination =
@@ -147,8 +151,8 @@
 </head>
 <body>
     <ul>
-        <li id="section-0" class="section">
-            <h1>Navigation</h1>
+        <li id="section-0" class="course-section">
+            <h3>Navigation</h3>
     <div id="navigation" style="display:none; margin-left: 12px; margin-top: -4px;">
     <label for="schulart">Für Schulart:</label>
     <select name="schulart" id="schulart">
@@ -285,7 +289,7 @@
     </svg>
     <!-- END nav.svg -->
     </div>
-    <a id="back" style="display: none" onclick="restoreNavigation();">
+    <a id="back" style="display: none; margin-left: 12px; margin-top: -4px; cursor: pointer" onclick="restoreNavigation();">
         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
             <path stroke="rgba(0, 0, 0, 0.6)" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path>
         </svg> Navigation
@@ -293,22 +297,26 @@
     </li>
 
 
-<li class="section">
-    <h1>Section 1</h1>
+<li class="course-section">
+    <h3>Section 1</h3>
 </li>
-<li class="section">
-    <h1>Section 2</h1>
+<li class="course-section">
+    <h3>Section 2</h3>
 </li>
-<li class="section">
-    <h1>Section 3</h1>
+<li class="course-section">
+    <h3>Section 3</h3>
 </li>
-<li class="section">
-    <h1>Section 4</h1>
+<li class="course-section">
+    <h3>Section 4</h3>
 </li>
 </ul>
 
     <script type="text/javascript">
         //<![CDATA[
+            let elefant = document.getElementById("section-0");
+            elefant.style.paddingTop = "0px";
+            elefant.getElementsByClassName("course-section-header")[0].style.setProperty('display', 'none', 'important');
+
             // Get the text field that we're going to track
             let field = document.getElementById("schulart");
             // See if we have an autosave value
@@ -331,7 +339,7 @@
                 // hide all li with .section
                 var sections = document.getElementsByClassName("course-section");
                 for (var i = 1; i < sections.length; i++) {
-                    sections.item(i).style.display = 'none';
+                    sections[i].style.display = 'none';
                 }
                 document.getElementById('navigation').style.display = 'block';
                 document.getElementById('back').style.display = 'none';

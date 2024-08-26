@@ -1,0 +1,50 @@
+{
+  "name": "bubble-navigation",
+  "version": "0.9.0",
+  "description": "Bubble Navigation für Fachnetz",
+  "license": "MIT",
+  "author": "Holger Engels",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smartin-singen/fachnetz-bs.git"
+  },
+  "homepage": "https://fachnetz-bs.zsl-bw.de/",
+  "keywords": [
+    "landesfachschaft",
+    "fachnetz"
+  ],
+  "type": "module",
+  "main": "dist/src/index.js",
+  "module": "dist/src/index.js",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "scripts": {
+    "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"wds\"",
+    "build": "tsc -w",
+    "prepublish": "tsc",
+    "lint": "eslint --ext .ts,.html . --ignore-path .gitignore && prettier \"**/*.ts\" --check --ignore-path .gitignore",
+    "format": "eslint --ext .ts,.html . --fix --ignore-path .gitignore && prettier \"**/*.ts\" --write --ignore-path .gitignore",
+    "storybook": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"wds -c .storybook/server.mjs\"",
+    "storybook:build": "tsc && build-storybook"
+  },
+  "engines": {
+    "npm": ">=8.5.0",
+    "node": ">=16.14.2"
+  },
+  "devDependencies": {
+    "@web/dev-server": "~0.4.6",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.23.0",
+    "prettier": "^3.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "lit": "^2.8.0"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "arrowParens": "avoid"
+  }
+}

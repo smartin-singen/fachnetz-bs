@@ -112,6 +112,7 @@ export class BubbleNavigation extends LitElement {
     const links = bubble?.links;
     const map = new Map(Object.entries(links || {}))
     const target = map.get(this.type) || map.get('alle');
+    console.log(target)
     if (target)
       window.location.href = target;
   }

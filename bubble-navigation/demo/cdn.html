@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <title>Solvee Equation Trainer</title>
+  <title>Bubble Navigation</title>
   <meta charset="utf-8">
   <style>
     body { background: white; font-family: sans-serif; }
@@ -10,17 +10,153 @@
 </head>
 <body>
 <script type="module">
-  import {KmapSolvee} from 'https://cdn.jsdelivr.net/npm/kmap-solvee@0.9.5/+esm'
-  window.customElements.define('kmap-solvee', KmapSolvee);
+  import {BubbleNavigation} from 'https://cdn.jsdelivr.net/npm/bubble-navigation@latest/+esm'
+  window.customElements.define('bubble-navigation', BubbleNavigation);
 </script>
 
-<kmap-solvee operations="polynomial" solutions="-3\times\sqrt{2}-4, 0, 3\times\sqrt{2}-4" strategy="polynomial">x^4+8x^3-2x^2=0</kmap-solvee>
-<kmap-solvee operations="polynomial" strategy="polynomial">\frac{1}{2}(x+2)(x+1)^2x=0</kmap-solvee>
-<kmap-solvee operations="polynomial" solutions="-1,0,1" strategy="polynomial" hints='[
-      {
-        "match": "_x^4+_x^2=0",
-        "operation": "substitute",
-        "message": "Kann man mit Substitution lösen, schneller gehts mit x² Ausklammern und dem Satz vom Nullprodukt"
-      }]'>2x^4-2x^2=0</kmap-solvee>
+<!-- language=json -->
+<bubble-navigation style="max-width: 540px">
+  {
+    "types": {
+      "bs": "Berufsschule",
+      "bfs": "Berufsfachschule",
+      "bk": "Berufskolleg",
+      "bg": "Berufliches Gymnasium",
+      "bos": "Berufsoberschule",
+      "fs": "Fachschule"
+    },
+    "groups": [
+      [
+        {
+          "id": "com",
+          "label": "Austausch",
+          "color": "rgb(207, 153, 197)",
+          "size": "large",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=11&section=2"
+          }
+        },
+        {
+          "id": "ma",
+          "label": "BG Mathe-&lt;br&gt;Arbeitsheft",
+          "color": "rgb(207, 153, 197)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=11&section=3"
+          }
+        },
+        {
+          "id": "md",
+          "label": "Materialdatenbank",
+          "color": "rgb(207, 153, 197)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/mod/data/view.php?id=1301"
+          }
+        },
+        {
+          "id": "ps",
+          "label": "Portale und&lt;br&gt;Sammlungen",
+          "color": "rgb(207, 153, 197)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/mod/page/view.php?id=1718"
+          }
+        }
+      ],
+      [
+        {
+          "id": "zsl",
+          "label": "ZSL",
+          "color": "rgb(115, 198, 181)",
+          "indent": "no",
+          "size": "small"
+        },
+        {
+          "id": "la",
+          "label": "Lehrkräfte-&lt;br&gt;ausbildung",
+          "color": "rgb(115, 198, 181)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=11&section=6"
+          }
+        },
+        {
+          "id": "lf",
+          "label": "Lehrkräfte-&lt;br&gt;fortbildung",
+          "color": "rgb(115, 198, 181)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=11&section=7"
+          }
+        },
+        {
+          "id": "bp",
+          "label": "Bildungspläne, Hand-&lt;br&gt;reichungen, Material",
+          "color": "rgb(115, 198, 181)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?id=3029",
+            "bs": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=153",
+            "bfs": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=162",
+            "bk": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=150",
+            "bg": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=147",
+            "bos": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=148",
+            "fs": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=151"
+          }
+        }
+      ],
+      [
+        {
+          "id": "ibbw",
+          "label": "IBBW",
+          "color": "rgb(241, 148, 137)",
+          "indent": "no",
+          "size": "small"
+        },
+        {
+          "id": "pa",
+          "label": "Prüfungsaufgaben&lt;br&gt;und Merkhilfen",
+          "color": "rgb(241, 148, 137)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?id=1370",
+            "bs": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=125",
+            "bfs": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=121",
+            "bk": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=118",
+            "bg": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=112",
+            "bos": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=128",
+            "fs": "https://fachnetz-bs.zsl-bw.de/mod/wiki/view.php?pageid=129"
+          }
+        }
+      ],
+      [
+        {
+          "id": "km",
+          "label": "KM",
+          "color": "rgb(248, 195, 112)",
+          "indent": "no",
+          "size": "small"
+        },
+        {
+          "id": "ev",
+          "label": "Erlasse und&lt;br&gt;Verordnungen",
+          "color": "rgb(248, 195, 112)",
+          "links": {
+            "alle": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=38",
+            "bs": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=38&section=3",
+            "bfs": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=38&section=5",
+            "bk": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=38&section=1",
+            "bg": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=38&section=4",
+            "bos": "https://fachnetz-bs.zsl-bw.de/course/view.php?id=38&section=6",
+            "fs": "https://km-bw.de/,Lde/startseite/schule/Fachschulen"
+          }
+        }
+      ],
+      [
+        {
+          "id": "rp",
+          "label": "RP",
+          "color": "rgb(229, 152, 101)",
+          "indent": "no",
+          "size": "small"
+        }
+      ]
+    ]
+  }
+</bubble-navigation>
 </body>
 </html>

@@ -1,7 +1,6 @@
 package fachnetz;
 
 import java.io.PrintStream;
-import java.util.List;
 
 /**
  * Created by holger on 21.12.14.

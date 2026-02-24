@@ -36,13 +36,18 @@ public class Arbeitsheft extends Endpoint {
             rest = rest.substring(1);
         if (!rest.endsWith("/"))
             rest += "/";
+        String queryUrl = url + rest + "wikis/xwiki/classes/XWiki.XWikiUsers/objects?number=10000";
 
-        String queryUrl = url + rest + "wikis/xwiki/classes/XWiki.XWikiUsers/objects";
-        System.out.println("Query URL: " + queryUrl);
+        String user = getConfigString("user");
+        String pass = getConfigString("password");
+        String auth = user + ":" + pass;
+        String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+
         List<Profile> profiles = new ArrayList<>();
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(queryUrl);
             get.addHeader("Accept", "application/json");
+            get.addHeader("Authorization", "Basic " + encodedAuth);
 
             try (CloseableHttpResponse response = client.execute(get)) {
                 HttpEntity entity = response.getEntity();
@@ -72,7 +77,7 @@ public class Arbeitsheft extends Endpoint {
                         // If not, we might need to fetch the individual object details:
                         // rest/wikis/xwiki/spaces/XWiki/pages/{pageName}/objects/XWiki.XWikiUsers/0
 
-                        Profile profile = fetchProfileDetails(client, url + rest, pageName);
+                        Profile profile = fetchProfileDetails(client, url + rest, pageName, encodedAuth);
                         if (profile != null) {
                             profiles.add(profile);
                         }
@@ -85,10 +90,12 @@ public class Arbeitsheft extends Endpoint {
         return profiles;
     }
 
-    private Profile fetchProfileDetails(CloseableHttpClient client, String restBaseUrl, String pageName) {
+    private Profile fetchProfileDetails(CloseableHttpClient client, String restBaseUrl, String pageName,
+            String encodedAuth) {
         String detailUrl = restBaseUrl + "wikis/xwiki/spaces/XWiki/pages/" + pageName + "/objects/XWiki.XWikiUsers/0";
         HttpGet get = new HttpGet(detailUrl);
         get.addHeader("Accept", "application/json");
+        get.addHeader("Authorization", "Basic " + encodedAuth);
 
         try (CloseableHttpResponse response = client.execute(get)) {
             HttpEntity entity = response.getEntity();

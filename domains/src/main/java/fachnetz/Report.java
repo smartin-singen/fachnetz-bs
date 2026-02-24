@@ -1,14 +1,17 @@
 package fachnetz;
 
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Created by holger on 25.01.17.
  */
 public class Report
-    extends HashMap<String, Object>
-{
+        extends ArrayList<Map.Entry<String, Object>> {
     public Report() {
-        put("timestamp", System.currentTimeMillis());
+        add(new AbstractMap.SimpleEntry<>("Zeitstempel", System.currentTimeMillis()));
+    }
+
+    public void add(String key, Object value) {
+        add(new AbstractMap.SimpleEntry<>(key, value));
     }
 }

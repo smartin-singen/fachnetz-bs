@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ArbeitsheftSyncTask extends Task {
+public class ArbeitsheftSyncTask extends Task<Report> {
     private String DOMAIN = "moodle";
     private String XWIKI_DOMAIN = "xwiki";
 
@@ -40,7 +40,7 @@ public class ArbeitsheftSyncTask extends Task {
     }
 
     @Override
-    public Object execute() {
+    public Report execute() {
         return null;
     }
 
@@ -54,17 +54,24 @@ public class ArbeitsheftSyncTask extends Task {
 
         Map<String, Profile> ahMap = new HashMap<>();
         for (Profile p : arbeitsheftProfiles) {
-            ahMap.put(p.getAnmeldename(), p);
+            String uname = p.getAnmeldename();
+            if (uname != null) {
+                ahMap.put(uname.toLowerCase(), p);
+            }
         }
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             for (Profile fnProfile : fachnetzProfiles) {
-                // Testing constraint requested by user
-                if (!"holgerengels".equals(fnProfile.getAnmeldename())) {
+                String fnUname = fnProfile.getAnmeldename();
+                if (fnUname == null)
                     continue;
+
+                Profile ahProfile = ahMap.get(fnUname.toLowerCase());
+                if (ahProfile == null) {
+                    // Fallback to username matching without dots
+                    ahProfile = ahMap.get(fnUname.replace(".", "").toLowerCase());
                 }
 
-                Profile ahProfile = ahMap.get(fnProfile.getAnmeldename());
                 if (ahProfile != null) {
                     boolean changed = false;
 
@@ -122,32 +129,53 @@ public class ArbeitsheftSyncTask extends Task {
         if (!rest.endsWith("/")) {
             rest += "/";
         }
-        String basePropUrl = xwikiUrl + rest + "wikis/xwiki/spaces/XWiki/pages/" + profile.getAnmeldename()
-                + "/objects/XWiki.XWikiUsers/0/properties/";
+        String user = getConfigString(XWIKI_DOMAIN, "user");
+        String pass = getConfigString(XWIKI_DOMAIN, "password");
 
-        updateProperty(client, basePropUrl, "first_name", profile.getVorname());
-        updateProperty(client, basePropUrl, "last_name", profile.getNachname());
-        updateProperty(client, basePropUrl, "schule", profile.getSchulname());
-        updateProperty(client, basePropUrl, "schulort", profile.getSchulort());
-    }
+        String auth = user + ":" + pass;
+        String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 
-    private void updateProperty(CloseableHttpClient client, String baseUrl, String propName, String propValue) {
-        String url = baseUrl + propName;
+        String url = xwikiUrl + rest + "wikis/xwiki/spaces/XWiki/pages/" + profile.getAnmeldename()
+                + "/objects/XWiki.XWikiUsers/0";
+
         HttpPut put = new HttpPut(url);
-        put.setHeader("Accept", "application/json");
-        put.setHeader("Content-Type", "application/json");
+        put.setHeader("Accept", "application/xml");
+        put.setHeader("Content-Type", "application/xml");
+        put.setHeader("Authorization", "Basic " + encodedAuth);
 
-        String safeValue = (propValue == null) ? "" : propValue.replace("\"", "\\\"");
-        String payload = String.format("{\"name\":\"%s\",\"value\":\"%s\"}", propName, safeValue);
-        put.setEntity(new StringEntity(payload, StandardCharsets.UTF_8));
+        String safeFirst = (profile.getVorname() == null) ? ""
+                : profile.getVorname().replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;");
+        String safeLast = (profile.getNachname() == null) ? ""
+                : profile.getNachname().replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;");
+        String safeSchule = (profile.getSchulname() == null) ? ""
+                : profile.getSchulname().replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;");
+        String safeSchulort = (profile.getSchulort() == null) ? ""
+                : profile.getSchulort().replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;");
+
+        String xmlPayload = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<object xmlns=\"http://www.xwiki.org\">\n" +
+                "  <className>XWiki.XWikiUsers</className>\n" +
+                "  <property name=\"first_name\"><value>" + safeFirst + "</value></property>\n" +
+                "  <property name=\"last_name\"><value>" + safeLast + "</value></property>\n" +
+                "  <property name=\"schule\"><value>" + safeSchule + "</value></property>\n" +
+                "  <property name=\"schulort\"><value>" + safeSchulort + "</value></property>\n" +
+                "</object>";
+
+        put.setEntity(new StringEntity(xmlPayload, StandardCharsets.UTF_8));
 
         try {
             client.execute(put, response -> {
+                int statusCode = response.getCode();
+                if (statusCode < 200 || statusCode >= 300) {
+                    System.err.println("Warnung: Unerwarteter Status " + statusCode + " von XWiki API bei "
+                            + profile.getAnmeldename());
+                }
                 EntityUtils.consume(response.getEntity());
                 return null;
             });
         } catch (Exception e) {
-            System.err.println("Fehler beim Aktualisieren der Eigenschaft " + propName + ": " + e.getMessage());
+            System.err.println("Fehler beim Aktualisieren der Eigenschaften für " + profile.getAnmeldename() + ": "
+                    + e.getMessage());
         }
     }
 }

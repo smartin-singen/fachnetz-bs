@@ -1,0 +1,73 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_profilemerge/main
+
+    Main template for the profile merge page.
+
+    Classes required for JS: none
+
+    Data attributes required for JS: none
+
+    Context variables required for this template:
+    * formhtml - The rendered merge form HTML
+    * success - Whether the merge was successful (boolean)
+    * successmessage - The success message to display
+    * errormessage - The error message to display (if any)
+    * logouturl - URL to log out after successful merge
+
+    Example context (json):
+    {
+        "formhtml": "<form>...</form>",
+        "success": false,
+        "successmessage": "",
+        "errormessage": "",
+        "logouturl": ""
+    }
+}}
+<div class="local-profilemerge-container">
+    {{#success}}
+        <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">
+                <i class="fa fa-check-circle"></i>
+                {{successmessage}}
+            </h4>
+            <hr>
+            <p>
+                <a href="{{logouturl}}" class="btn btn-primary">
+                    <i class="fa fa-sign-out"></i>
+                    {{#str}}logout, core{{/str}}
+                </a>
+            </p>
+        </div>
+    {{/success}}
+
+    {{#errormessage}}
+        <div class="alert alert-danger" role="alert">
+            <i class="fa fa-exclamation-triangle"></i>
+            {{errormessage}}
+        </div>
+    {{/errormessage}}
+
+    {{^success}}
+        <div class="card">
+            <div class="card-body">
+                {{{formhtml}}}
+            </div>
+        </div>
+    {{/success}}
+</div>

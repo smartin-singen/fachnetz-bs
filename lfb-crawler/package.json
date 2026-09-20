@@ -1,0 +1,26 @@
+{
+  "name": "lfb-crawler",
+  "version": "1.0.0",
+  "description": "Crawler für LFB-Online Fortbildungen (z.B. LFTMath319! / Mathe-Arbeitsheft)",
+  "main": "crawl-lfb.js",
+  "scripts": {
+    "start": "node crawl-lfb.js",
+    "crawl": "node crawl-lfb.js --output veranstaltungen.json",
+    "crawl:browser": "node crawl-lfb.js --browser --output veranstaltungen.json",
+    "transform": "node transform-zielinfos.js",
+    "build:preview": "node build-preview.js",
+    "preview": "node build-preview.js && xdg-open preview.html"
+  },
+  "keywords": [
+    "lfb",
+    "crawler",
+    "scraper",
+    "lehrerfortbildung",
+    "mathe-arbeitsheft"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer-core": "^24.40.0"
+  }
+}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/profilemerge/db" VERSION="2026062701" COMMENT="XMLDB file for local_profilemerge">
+    <TABLES>
+        <TABLE NAME="local_profilemerge_log" COMMENT="Log of profile merge operations">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="source_userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"
+                       COMMENT="User ID of the old account (merged from)"/>
+                <FIELD NAME="target_userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"
+                       COMMENT="User ID of the new OIDC account (merged to)"/>
+                <FIELD NAME="old_username" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"
+                       COMMENT="Username of the old account for reference by dependent systems"/>
+                <FIELD NAME="old_auth" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"
+                       COMMENT="Authentication method of the old account"/>
+                <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="failed" SEQUENCE="false"
+                       COMMENT="Merge result: success or failed"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="source_userid_idx" UNIQUE="false" FIELDS="source_userid"/>
+                <INDEX NAME="target_userid_idx" UNIQUE="false" FIELDS="target_userid"/>
+            </INDEXES>
+        </TABLE>
+    </TABLES>
+</XMLDB>

@@ -1,0 +1,396 @@
+<style>
+    /* ==========================================================================
+       LFB-Online Fortbildungsangebote – Modernes Design für Moodle
+       ========================================================================== */
+
+    .lfb-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #2d3748;
+        margin: 1.5rem 0;
+        line-height: 1.5;
+    }
+
+    /* Interaktive Sticky-Filter-Card */
+    .lfb-wrapper .filter-card {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 60px;
+        /* Abstand zur fixierten Moodle-Navbar */
+        z-index: 100;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Filter Grid */
+    .lfb-wrapper .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        align-items: end;
+    }
+
+    @media (max-width: 992px) {
+        .lfb-wrapper .filter-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .lfb-wrapper .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .lfb-wrapper .filter-card {
+            top: 10px;
+            padding: 1rem;
+        }
+    }
+
+    .lfb-wrapper .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .lfb-wrapper .filter-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+
+    .lfb-wrapper .filter-select,
+    .lfb-wrapper .filter-input {
+        width: 100%;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #334155;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        box-sizing: border-box;
+    }
+
+    .lfb-wrapper .filter-select:focus,
+    .lfb-wrapper .filter-input:focus {
+        border-color: #2563eb;
+        outline: 0;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .lfb-wrapper .filter-select {
+        cursor: pointer;
+    }
+
+    /* Filter Footer (Checkbox & Buttons) */
+    .lfb-wrapper .filter-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .lfb-wrapper .filter-checkbox-label {
+        font-size: 0.88rem;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+    }
+
+    .lfb-wrapper .filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Buttons */
+    .lfb-wrapper .btn-action {
+        padding: 0.4rem 0.85rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .lfb-wrapper .btn-secondary {
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        color: #475569;
+    }
+
+    .lfb-wrapper .btn-secondary:hover {
+        background-color: #f8fafc;
+        border-color: #94a3b8;
+        color: #1e293b;
+    }
+
+    .lfb-wrapper .btn-primary {
+        border: 1px solid #2563eb;
+        background-color: #ffffff;
+        color: #2563eb;
+    }
+
+    .lfb-wrapper .btn-primary:hover {
+        background-color: #2563eb;
+        color: #ffffff;
+    }
+
+    /* Fortbildungskarten & Hover-Effekt */
+    .lfb-wrapper .lfb-thema {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        margin-bottom: 1.5rem !important;
+        overflow: hidden;
+    }
+
+    .lfb-wrapper .lfb-thema:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Tabellen in Karten */
+    .lfb-wrapper table.lfb {
+        width: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .lfb-wrapper .lfb th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.88rem;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 8px 10px;
+        text-align: left;
+    }
+
+    .lfb-wrapper .lfb td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        font-size: 0.92rem;
+    }
+
+    .lfb-wrapper .lfb tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .lfb-wrapper .lfb-anbieter,
+    .lfb-wrapper .lfb-tnr,
+    .lfb-wrapper .lfb-dauer,
+    .lfb-wrapper .lfb-ort {
+        white-space: nowrap !important;
+    }
+
+    .lfb-wrapper .lfb-erster-termin span:first-child {
+        white-space: nowrap;
+    }
+
+    .lfb-wrapper .lfb-tnr {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.92rem;
+    }
+
+    .lfb-wrapper .lfb-tnr a {
+        color: #1d4ed8;
+        text-decoration: underline;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    /* Spinner / Loader */
+    .lfb-wrapper .lfb-spinner-inline {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e2e8f0;
+        border-top: 2px solid #2563eb;
+        border-radius: 50%;
+        animation: lfb-spin 0.8s linear infinite;
+        display: none;
+    }
+
+    .lfb-wrapper .lfb-loading-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        gap: 14px;
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+
+    .lfb-wrapper .lfb-spinner-large {
+        width: 44px;
+        height: 44px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #2563eb;
+        border-radius: 50%;
+        animation: lfb-spin 0.8s linear infinite;
+    }
+
+    @keyframes lfb-spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 650px) {
+        .lfb-wrapper .lfb-anbieter {
+            display: none;
+        }
+    }
+</style>
+
+<div class="lfb-wrapper">
+    <!-- Interaktive Filterleiste -->
+    <div class="filter-card">
+        <div class="filter-grid">
+            <div class="filter-item">
+                <label for="anbieter-filter" class="filter-label">Region</label>
+                <select id="anbieter-filter" class="filter-select" onchange="applyFilters()">
+                    <option value="">Alle Regionen</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="ort-filter" class="filter-label">Ort / Format</label>
+                <select id="ort-filter" class="filter-select" onchange="applyFilters()">
+                    <option value="">Alle Orte</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="tag-filter" class="filter-label">Themen-Tag</label>
+                <select id="tag-filter" class="filter-select" onchange="applyFilters()">
+                    <option value="">Alle Tags</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="such-filter" class="filter-label">Volltextsuche</label>
+                <input type="search" id="such-filter" class="filter-input" placeholder="Stichwort, Ort, LFB-Nr..."
+                    oninput="applyFilters()">
+            </div>
+        </div>
+
+        <div class="filter-footer">
+            <div>
+                <label class="filter-checkbox-label" for="show-completed">
+                    <input type="checkbox" id="show-completed" onchange="applyFilters()">
+                    <span>Abgelaufene Termine anzeigen</span>
+                </label>
+            </div>
+
+            <div class="filter-actions">
+                <div id="loader" class="lfb-spinner-inline"></div>
+                <button type="button" class="btn-action btn-secondary" onclick="resetFilters()"
+                    title="Alle Filter zurücksetzen">
+                    Filter zurücksetzen
+                </button>
+                <button type="button" class="btn-action btn-primary" onclick="generateLink()"
+                    title="Diesen Filterzustand als teilbaren Link in die Zwischenablage kopieren">
+                    Link merken
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inhaltsbereich -->
+    <div id="fortbildungen-container">
+        <div id="lfb-loader" class="lfb-loading-box">
+            <div class="lfb-spinner-large"></div>
+            <div>Fortbildungsangebote werden geladen...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts (Moodle-Dateireferenzen) -->
+<!-- 1. darstellung.js / fortbildungen.js -->
+<script src="/pluginfile.php/29012/mod_resource/content/30/darstellung.js"></script>
+
+<!-- 2. Initialisierung & Laden der JSON-Daten -->
+<script>
+    (function () {
+        let checkAttempts = 0;
+        const maxAttempts = 50;
+
+        async function initLFB() {
+            if (typeof loadJSON !== 'function' || typeof populateFilters !== 'function') {
+                checkAttempts++;
+                if (checkAttempts >= maxAttempts) {
+                    console.error('[LFB-Init] Timeout: darstellung.js konnte nicht initialisiert werden.');
+                    const loader = document.getElementById('lfb-loader');
+                    if (loader) loader.style.display = 'none';
+                    const container = document.getElementById('fortbildungen-container');
+                    if (container) {
+                        container.innerHTML = `<div style="padding: 24px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; text-align: center; line-height: 1.6;">
+                            <strong>Fehler:</strong> Das Skript <code>darstellung.js</code> konnte nicht geladen werden.<br>
+                            <span style="font-size: 0.9rem; color: #7f1d1d;">Pruefe bitte in der Browser-Konsole (F12), ob die Datei erreichbar ist.</span>
+                        </div>`;
+                    }
+                    return;
+                }
+                setTimeout(initLFB, 50);
+                return;
+            }
+
+            const jsonUrl = `/pluginfile.php/29013/mod_resource/content/25/fortbildungen.json`;
+
+            try {
+                const data = await loadJSON(jsonUrl);
+                populateFilters(data);
+                applyFilters();
+            } catch (err) {
+                console.error('[LFB-Init] Fehler beim Abruf der JSON-Daten:', err);
+                const container = document.getElementById('fortbildungen-container');
+                if (container) {
+                    container.innerHTML = `<div style="padding: 24px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; text-align: center; font-weight: 500;">
+                        Die Fortbildungsdaten (${jsonUrl}) konnten nicht geladen werden.<br>
+                        <small style="font-weight: normal; color: #7f1d1d;">Details in der Browser-Konsole (F12).</small>
+                    </div>`;
+                }
+            } finally {
+                const loader = document.getElementById('lfb-loader');
+                if (loader) loader.style.display = 'none';
+            }
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            initLFB();
+        } else {
+            document.addEventListener('DOMContentLoaded', initLFB);
+        }
+    })();
+</script>

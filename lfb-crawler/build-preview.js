@@ -2,7 +2,7 @@
 
 /**
  * Erzeugt eine eigenständige, interaktive HTML-Vorschau (preview.html)
- * aus einer aggregierten JSON-Datei (z. B. sj2627.json oder zielinfos.json) und darstellung.js.
+ * aus einer aggregierten JSON-Datei (z. B. fortbildungen.json oder zielinfos.json) und darstellung.js.
  * 
  * Vorteil: Funktioniert direkt per Doppelklick im Browser ohne CORS-Probleme!
  */
@@ -13,29 +13,29 @@ const { parseArgs } = require('util');
 const { generateHTMLFromJSON } = require('./darstellung.js');
 
 const options = {
-  input: {
-    type: 'string',
-    short: 'i'
-  },
-  output: {
-    type: 'string',
-    short: 'o',
-    default: 'preview.html'
-  },
-  title: {
-    type: 'string',
-    short: 't',
-    default: 'LFB Fortbildungsangebote – Vorschau Schuljahr 26/27'
-  },
-  help: {
-    type: 'boolean',
-    short: 'h',
-    default: false
-  }
+    input: {
+        type: 'string',
+        short: 'i'
+    },
+    output: {
+        type: 'string',
+        short: 'o',
+        default: 'preview.html'
+    },
+    title: {
+        type: 'string',
+        short: 't',
+        default: 'LFB Fortbildungsangebote – Vorschau Schuljahr 26/27'
+    },
+    help: {
+        type: 'boolean',
+        short: 'h',
+        default: false
+    }
 };
 
 function printHelp() {
-  console.log(`
+    console.log(`
 LFB-Online HTML-Vorschau-Generator (build-preview.js)
 =====================================================
 
@@ -43,14 +43,14 @@ Verwendung:
   node build-preview.js [Eingabedatei.json] [Optionen]
 
 Optionen:
-  -i, --input <file>   Eingabedatei (z. B. sj2627.json oder zielinfos.json)
+  -i, --input <file>   Eingabedatei (z. B. fortbildungen.json oder zielinfos.json)
   -o, --output <file>  HTML-Ausgabedatei (Standard: "preview.html")
   -t, --title <string> Titelzeile in der HTML-Vorschau
   -h, --help           Diese Hilfe anzeigen
 
 Beispiele:
-  node build-preview.js sj2627.json
-  node build-preview.js -i sj2627.json -o preview.html
+  node build-preview.js fortbildungen.json
+  node build-preview.js -i fortbildungen.json -o preview.html
   node build-preview.js --input zielinfos.json
 `);
 }
@@ -58,31 +58,31 @@ Beispiele:
 const { values, positionals } = parseArgs({ options, allowPositionals: true });
 
 if (values.help) {
-  printHelp();
-  process.exit(0);
+    printHelp();
+    process.exit(0);
 }
 
 // Eingabedatei ermitteln: 1. Flag -i/--input, 2. Erstes Positional-Argument, 3. Fallbacks
 let inputFile = values.input || positionals[0];
 if (!inputFile) {
-  if (fs.existsSync(path.join(__dirname, 'sj2627.json'))) {
-    inputFile = 'sj2627.json';
-  } else if (fs.existsSync(path.join(__dirname, 'weitere-angebote.json'))) {
-    inputFile = 'weitere-angebote.json';
-  } else if (fs.existsSync(path.join(__dirname, 'zielinfos.json'))) {
-    inputFile = 'zielinfos.json';
-  } else {
-    inputFile = 'fortbildungen.json';
-  }
+    if (fs.existsSync(path.join(__dirname, 'fortbildungen.json'))) {
+        inputFile = 'fortbildungen.json';
+    } else if (fs.existsSync(path.join(__dirname, 'weitere-angebote.json'))) {
+        inputFile = 'weitere-angebote.json';
+    } else if (fs.existsSync(path.join(__dirname, 'zielinfos.json'))) {
+        inputFile = 'zielinfos.json';
+    } else {
+        inputFile = 'fortbildungen.json';
+    }
 }
 
 const jsonPath = path.isAbsolute(inputFile) ? inputFile : path.join(__dirname, inputFile);
 const outputPath = path.isAbsolute(values.output) ? values.output : path.join(__dirname, values.output);
 
 if (!fs.existsSync(jsonPath)) {
-  console.error(`Fehler: Eingabedatei "${jsonPath}" existiert nicht!`);
-  console.error(`Bitte gib eine gültige JSON-Datei an (z. B. "node build-preview.js sj2627.json").`);
-  process.exit(1);
+    console.error(`Fehler: Eingabedatei "${jsonPath}" existiert nicht!`);
+    console.error(`Bitte gib eine gültige JSON-Datei an (z. B. "node build-preview.js fortbildungen.json").`);
+    process.exit(1);
 }
 
 console.log(`Lese Fortbildungsdaten aus: ${jsonPath}`);
@@ -202,7 +202,7 @@ const htmlContent = `<!DOCTYPE html>
         </div>
     </header>
 
-    <main class="lfb-container mb-5">
+    <main class="lfb-container mb-5" id="fortbildungsuebersicht">
         <!-- Interaktive Filterleiste -->
         <div class="filter-card p-3 p-md-4">
             <div class="row g-3 align-items-end">

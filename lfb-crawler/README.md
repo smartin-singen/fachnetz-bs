@@ -90,10 +90,16 @@ Führt semantische Bereinigungen durch, aggregiert modulare Reihen (Impulsreihen
 
 ```bash
 npm run transform
-# Liest veranstaltungen.json + weitere-angebote.json und erzeugt sj2627.json
+# Liest veranstaltungen.json + weitere-angebote.json und erzeugt fortbildungen.json
+
+# Termine oder Kurse ausschließen (--exclude unterstützt Mehrfachangabe):
+node transform-zielinfos.js --exclude "V42P6Z"
+node transform-zielinfos.js --exclude "V42P6Z" --exclude "LRZE79"
+node transform-zielinfos.js -x "V42P6Z, LRZE79"
+npm run transform -- --exclude "V42P6Z"
 
 # Oder mit individuellen Parametern:
-node transform-zielinfos.js -i veranstaltungen.json -e weitere-angebote.json -o sj2627.json
+node transform-zielinfos.js -i veranstaltungen.json -e weitere-angebote.json -o fortbildungen.json
 ```
 
 ---
@@ -141,12 +147,12 @@ Die Anwendung wertet beim Aufruf automatisch URL-Parameter aus `window.location.
 
 Kombinationen sind beliebig möglich, z. B.:
 ```text
-https://moodle.example.de/course/view.php?id=123&section=2&aasuche=Analysis&aaort=Online
+https://moodle.example.de/course/view.php?id=123&section=2&aasuche=Analysis&aaort=Online#fortbildungsuebersicht
 ```
 
 ### Teilen & Direktlinks („Link merken“)
 
-Über die Schaltfläche **„Link merken“** in der Filterleiste wird die aktuelle URL mitsamt allen aktiven Dropdown-Filtern, der Checkbox und dem eingegebenen Volltext-Suchbegriff (`aasuche`) in die Zwischenablage kopiert.
+Über die Schaltfläche **„Link merken“** in der Filterleiste wird die aktuelle URL mitsamt allen aktiven Dropdown-Filtern, der Checkbox, dem Volltext-Suchbegriff (`aasuche`) sowie dem Sprunganker `#fortbildungsuebersicht` in die Zwischenablage kopiert. Dadurch springt der Browser beim Aufruf direkt an die Übersicht.
 
 > [!IMPORTANT]
 > **Hinweis zur Moodle-Aktualisierung:**

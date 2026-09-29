@@ -128,6 +128,21 @@ function isTerminActive(termin, today, isAbrufangebot = false) {
 }
 
 /**
+ * Formatiert die Ortsangabe und stellt "online" bei vorhandenem BBB-/Webex-Link als anklickbaren Link dar
+ */
+function formatOrtCell(ort, link) {
+    if (!ort || ort === '–') return '<span class="text-muted">–</span>';
+    if (typeof ort === 'string' && ort.includes('<a ')) {
+        return ort;
+    }
+    const escaped = escapeHTML(ort);
+    if (ort.toLowerCase() === 'online' && link) {
+        return `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; font-weight: 500;" title="Online-Konferenzraum öffnen">${escaped}</a>`;
+    }
+    return escaped;
+}
+
+/**
  * Hauptfunktion: Erzeugt das HTML aus der JSON-Datenstruktur
  */
 function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '', selectedTag = '', showCompleted = false, searchQuery = '') {
@@ -310,13 +325,14 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
 
                     // Ort
                     categoryHtml += `<td class="lfb-ort align-middle" style="padding: 8px; white-space: nowrap;">
-                        <div>${escapeHTML(termin.ort || '–')}</div>`;
+                        <div>${formatOrtCell(termin.ort, termin.online_link || termin.link)}</div>`;
                     if (Array.isArray(termin.reihe_je_termin) && termin.reihe_je_termin.length > 0) {
                         termin.reihe_je_termin.forEach(reihe => {
                             const rDate = parseLocalDate(reihe.termin);
                             if (showCompleted || (rDate && rDate >= today)) {
+                                const rLink = reihe.online_link || reihe.link || (reihe.ort?.toLowerCase() === 'online' ? (termin.online_link || termin.link) : '');
                                 categoryHtml += `<div style="font-size: 0.85rem; color: #555; margin-top: 2px; white-space: nowrap;">
-                                    ${escapeHTML(reihe.ort || '–')}
+                                    ${formatOrtCell(reihe.ort, rLink)}
                                 </div>`;
                             }
                         });
@@ -374,7 +390,9 @@ function generateLink() {
     if (completed) params.set("aacompleted", "1");
     if (suche) params.set("aasuche", suche);
 
-    const newUrl = baseUrl + "?" + params.toString();
+    const queryString = params.toString();
+    const hash = document.getElementById("fortbildungsuebersicht") ? "#fortbildungsuebersicht" : (window.location.hash || '');
+    const newUrl = baseUrl + (queryString ? "?" + queryString : "") + hash;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(newUrl).then(() => {
@@ -524,6 +542,7 @@ if (typeof module !== 'undefined' && module.exports) {
         formatDate,
         getTerminText,
         isTerminActive,
+        formatOrtCell,
         generateHTMLFromJSON
     };
 }

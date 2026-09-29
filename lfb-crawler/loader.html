@@ -6,7 +6,10 @@
     .lfb-wrapper {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #2d3748;
-        margin: 1.5rem 0;
+        max-width: 1200px;
+        margin: 0 auto 3rem auto;
+        padding: 0 1rem;
+        box-sizing: border-box;
         line-height: 1.5;
     }
 
@@ -14,15 +17,20 @@
     .lfb-wrapper .filter-card {
         position: -webkit-sticky;
         position: sticky;
-        top: 60px;
-        /* Abstand zur fixierten Moodle-Navbar */
+        top: 0;
         z-index: 100;
         background: #ffffff;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         border: 1px solid #e2e8f0;
         padding: 1.25rem 1.5rem;
+        margin-top: 0;
         margin-bottom: 2rem;
+        box-sizing: border-box;
+    }
+
+    .lfb-wrapper .lfb-kategorie-block {
+        margin-bottom: 3rem;
     }
 
     /* Filter Grid */
@@ -45,7 +53,7 @@
         }
 
         .lfb-wrapper .filter-card {
-            top: 10px;
+            top: 0;
             padding: 1rem;
         }
     }
@@ -273,7 +281,7 @@
     }
 </style>
 
-<div class="lfb-wrapper">
+<div class="lfb-wrapper" id="fortbildungsuebersicht">
     <!-- Interaktive Filterleiste -->
     <div class="filter-card">
         <div class="filter-grid">
@@ -338,7 +346,7 @@
 
 <!-- Scripts (Moodle-Dateireferenzen) -->
 <!-- 1. darstellung.js / fortbildungen.js -->
-<script src="/pluginfile.php/29012/mod_resource/content/30/darstellung.js"></script>
+<script src="/pluginfile.php/29012/mod_resource/content/33/darstellung.js"></script>
 
 <!-- 2. Initialisierung & Laden der JSON-Daten -->
 <script>
@@ -366,7 +374,7 @@
                 return;
             }
 
-            const jsonUrl = `/pluginfile.php/29013/mod_resource/content/25/fortbildungen.json`;
+            const jsonUrl = `/pluginfile.php/29013/mod_resource/content/27/fortbildungen.json`;
 
             try {
                 const data = await loadJSON(jsonUrl);

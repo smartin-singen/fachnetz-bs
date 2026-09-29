@@ -27,12 +27,18 @@ const options = {
   output: {
     type: 'string',
     short: 'o',
-    default: 'sj2627.json'
+    default: 'fortbildungen.json'
   },
   schuljahr: {
     type: 'string',
     short: 's',
     default: '26/27'
+  },
+  exclude: {
+    type: 'string',
+    short: 'x',
+    multiple: true,
+    default: []
   },
   help: {
     type: 'boolean',
@@ -125,7 +131,57 @@ function checkIsAbruf(ev) {
 }
 
 /**
- * Berechnet die semantische Dauer (ganztags, nachmittags, n. Absprache, Reihe)
+ * Extrahiert BigBlueButton- oder Webex-Konferenzlinks aus Hinweisen, Tagungsprogramm,
+ * Veranstaltungsraum oder sonstigen Anhang-/Textfeldern.
+ */
+function extractConferenceLink(ev) {
+  if (!ev) return '';
+
+  const candidates = [
+    ev.hinweis,
+    ev.raw?.teilnahmeHinweis,
+    ev.tagungsprogramm,
+    ev.raw?.tagungsprogramm,
+    ev.raw?.veranstaltungsRaum,
+    ev.ort?.raum,
+    ev.inhalt,
+    ev.raw?.inhalt,
+    ev.ziel,
+    ev.raw?.veranstaltungsZiel
+  ];
+
+  if (Array.isArray(ev.anhaenge)) candidates.push(...ev.anhaenge.map(a => typeof a === 'string' ? a : JSON.stringify(a)));
+  if (Array.isArray(ev.raw?.anhaenge)) candidates.push(...ev.raw.anhaenge.map(a => typeof a === 'string' ? a : JSON.stringify(a)));
+  if (Array.isArray(ev.attachments)) candidates.push(...ev.attachments.map(a => typeof a === 'string' ? a : JSON.stringify(a)));
+  if (Array.isArray(ev.raw?.attachments)) candidates.push(...ev.raw.attachments.map(a => typeof a === 'string' ? a : JSON.stringify(a)));
+
+  for (const text of candidates) {
+    if (!text || typeof text !== 'string') continue;
+    const match = text.match(/https?:\/\/[^\s"'<>()]+/i);
+    if (match) {
+      const url = match[0].replace(/[.,;:()]+$/, '');
+      if (/bigbluebutton|webex/i.test(url)) {
+        return url;
+      }
+    }
+  }
+
+  try {
+    const fullStr = JSON.stringify(ev);
+    const urls = fullStr.match(/https?:\/\/[^\s"'\\<>]+/g) || [];
+    for (const rawUrl of urls) {
+      const url = rawUrl.replace(/[.,;:()]+$/, '');
+      if (/bigbluebutton|webex/i.test(url)) {
+        return url;
+      }
+    }
+  } catch (e) { }
+
+  return '';
+}
+
+/**
+ * Berechnet die Dauer (bei eintägigen Veranstaltungen Uhrzeit z.B. 15:30 - 16:30, sonst Reihe/ganztags/nachmittags/n. Absprache)
  */
 function mapDauer(beginn, ende, typ, titel, isSeries = false) {
   const t = (titel || '').toLowerCase();
@@ -133,19 +189,26 @@ function mapDauer(beginn, ende, typ, titel, isSeries = false) {
   if (typLower.startsWith('abruf') || t.startsWith('abruf') || !beginn || (beginn && beginn.includes('2026-12-31'))) {
     return 'n. Absprache';
   }
+  if (!beginn || !ende) return 'n. Absprache';
+
+  // 1. Eintägige Veranstaltung: Uhrzeit nicht semantisch kürzen (z. B. "15:30 - 16:30")
+  const startDate = beginn.slice(0, 10);
+  const endDate = ende.slice(0, 10);
+  if (startDate === endDate) {
+    const startTime = beginn.slice(11, 16);
+    const endTime = ende.slice(11, 16);
+    if (startTime && endTime && (startTime !== '00:00' || endTime !== '00:00')) {
+      return `${startTime} - ${endTime}`;
+    }
+  }
+
+  // 2. Mehrteilige Reihe
   if (isSeries) {
     return 'Reihe';
   }
-  if (!beginn || !ende) return 'n. Absprache';
 
-  const start = new Date(beginn);
-  const end = new Date(ende);
-  const diffHours = (end - start) / (1000 * 60 * 60);
-  const startHour = start.getHours();
-
-  if (diffHours >= 5) return 'ganztags';
-  if (startHour >= 12) return 'nachmittags';
-  return 'ganztags';
+  // 3. Mehrtägige Veranstaltungen
+  return 'mehrtägig';
 }
 
 /**
@@ -155,7 +218,7 @@ function generateTags(titel, inhalt, ziel) {
   const text = `${titel || ''} ${inhalt || ''} ${ziel || ''}`.toLowerCase();
   const tags = new Set();
 
-  if (text.includes('ki') || text.includes('künstliche intelligenz')) tags.add('KI');
+  if (text.includes(' ki ') || text.includes('künstliche intelligenz')) tags.add('KI');
   if (text.includes('abitur') || text.includes('prüfung')) tags.add('Prüfung');
   if (text.includes('berufliches gymnasium') || text.includes(' bg ') || text.includes('bg/bo')) tags.add('BG');
   if (text.includes('berufskolleg') || text.includes(' bk ')) tags.add('BK');
@@ -202,9 +265,76 @@ function createDefaultKurzbeschreibung(event) {
 }
 
 /**
+ * Parst und normalisiert die Ausschlussliste.
+ * Unterstützt wiederholte CLI-Argumente, Arrays sowie Trennung durch Komma, Semikolon
+ * oder Leerzeichen (bei TNRs).
+ */
+function parseExcludeList(rawList) {
+  if (!rawList) return [];
+  const list = Array.isArray(rawList) ? rawList : [rawList];
+  const result = [];
+  for (const entry of list) {
+    if (typeof entry !== 'string') continue;
+    const parts = entry.split(/[,;]+/);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const subParts = trimmed.split(/\s+/);
+      if (subParts.length > 1 && subParts.every(p => /^[A-Za-z0-9]{5,8}$/.test(p))) {
+        result.push(...subParts);
+      } else {
+        result.push(trimmed);
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Haupttransformations-Funktion
  */
-function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
+function transform({ crawledEvents, existingData, schuljahr = '26/27', exclude = [] }) {
+  const excludeItems = parseExcludeList(exclude);
+  const excludeTnrSet = new Set(excludeItems.map(x => x.toUpperCase()));
+  const excludeTitleSet = new Set(excludeItems.map(x => x.toLowerCase()));
+  const excludeNormTitleSet = new Set(excludeItems.map(x => normalizeTitle(x).toLowerCase()));
+  const excludeIdSet = new Set(excludeItems.map(x => String(x)));
+
+  function isExcludedEvent(ev) {
+    if (!excludeItems.length) return false;
+    const tnr = (ev.terminnummer || '').toUpperCase();
+    if (tnr && excludeTnrSet.has(tnr)) return true;
+
+    const rawTnr = (ev.raw?.terminnummer || '').toUpperCase();
+    if (rawTnr && excludeTnrSet.has(rawTnr)) return true;
+
+    const vId = ev.raw?.veranstaltung?.id != null ? String(ev.raw.veranstaltung.id) : '';
+    if (vId && excludeIdSet.has(vId)) return true;
+
+    const rawId = ev.raw?.id != null ? String(ev.raw.id) : '';
+    if (rawId && excludeIdSet.has(rawId)) return true;
+
+    const titel = (ev.titel || '').toLowerCase();
+    if (titel && (excludeTitleSet.has(titel) || excludeNormTitleSet.has(titel))) return true;
+
+    const normTitel = normalizeTitle(ev.titel).toLowerCase();
+    if (normTitel && (excludeTitleSet.has(normTitel) || excludeNormTitleSet.has(normTitel))) return true;
+
+    const vTitel = (ev.raw?.veranstaltung?.titel || '').toLowerCase();
+    if (vTitel && (excludeTitleSet.has(vTitel) || excludeNormTitleSet.has(normalizeTitle(vTitel).toLowerCase()))) return true;
+
+    return false;
+  }
+
+  function isExcludedItem(item) {
+    if (!excludeItems.length) return false;
+    if (item.tnr && excludeTnrSet.has(item.tnr.toUpperCase())) return true;
+    if (Array.isArray(item.tnrs) && item.tnrs.some(t => excludeTnrSet.has(t.toUpperCase()))) return true;
+    const titel = (item.titel || '').toLowerCase();
+    if (titel && (excludeTitleSet.has(titel) || excludeNormTitleSet.has(normalizeTitle(item.titel).toLowerCase()))) return true;
+    return false;
+  }
+
   // 0. Filtern nach Schuljahr
   let filteredEvents = crawledEvents;
   if (schuljahr === '26/27' || schuljahr === '2026/2027') {
@@ -223,6 +353,24 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
       if (d >= '2025-08-01' && d <= '2026-07-31') return true;
       return false;
     });
+  }
+
+  if (excludeItems.length > 0) {
+    const matchedExcludes = new Set();
+    const beforeCount = filteredEvents.length;
+    filteredEvents = filteredEvents.filter(ev => {
+      const excluded = isExcludedEvent(ev);
+      if (excluded) {
+        matchedExcludes.add(ev.terminnummer || ev.titel);
+      }
+      return !excluded;
+    });
+    const excludedCount = beforeCount - filteredEvents.length;
+    if (excludedCount > 0) {
+      console.log(`[Exclude] ${excludedCount} von ${beforeCount} Terminen ausgeschlossen (${Array.from(matchedExcludes).join(', ')}).`);
+    } else {
+      console.log(`[Exclude] Hinweis: Keine passenden Termine für Ausschlusskriterien gefunden: ${excludeItems.join(', ')}`);
+    }
   }
 
   // Bestehende manuelle Einträge indizieren
@@ -291,7 +439,7 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
 
     if (isModulreihe && vId) {
       if (!modulreihenGroups.has(vId)) {
-        const vTitle = ev.raw?.veranstaltung?.titel 
+        const vTitle = ev.raw?.veranstaltung?.titel
           ? normalizeTitle(ev.raw.veranstaltung.titel)
           : normalizeTitle(ev.titel);
         modulreihenGroups.set(vId, {
@@ -308,7 +456,7 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
     if (tMatch) {
       const baseTitle = normalizeTitle(tMatch[1]);
       const partNum = parseInt(tMatch[2] || tMatch[3] || tMatch[4] || tMatch[5] || tMatch[6], 10);
-      const seriesKey = ev.raw?.veranstaltung?.id 
+      const seriesKey = ev.raw?.veranstaltung?.id
         ? `v_${ev.raw.veranstaltung.id}`
         : `${baseTitle}_${ev.ort?.stadt || 'online'}`;
 
@@ -390,15 +538,22 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
         thema = ev.titel.slice(dashIdx + 3).trim();
       }
 
-      courseObj.course.termine.push({
+      const evOrt = mapOrt(ev.ort, ev.titel, ev.raw?.terminInform);
+      const confLink = evOrt === 'online' ? (extractConferenceLink(ev) || extractConferenceLink(primary)) : '';
+
+      const terminObj = {
         anbieter: mapAnbieter(ev.veranstalter),
         tnr: ev.terminnummer,
         erster_termin: ev.beginn ? ev.beginn.slice(0, 10) : '',
         dauer: mapDauer(ev.beginn, ev.ende, ev.veranstaltungstyp, ev.titel, false),
-        ort: mapOrt(ev.ort, ev.titel, ev.raw?.terminInform),
+        ort: evOrt,
         thema: thema,
         reihe_je_termin: []
-      });
+      };
+      if (confLink) {
+        terminObj.online_link = confLink;
+      }
+      courseObj.course.termine.push(terminObj);
     }
   }
 
@@ -415,21 +570,34 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
     const reiheJeTermin = [];
     for (let i = 1; i < parts.length; i++) {
       const p = parts[i].ev;
-      reiheJeTermin.push({
+      const pOrt = mapOrt(p.ort, p.titel, p.raw?.terminInform);
+      const pConfLink = pOrt === 'online' ? (extractConferenceLink(p) || extractConferenceLink(primary)) : '';
+      const reiheItem = {
         termin: p.beginn ? p.beginn.slice(0, 10) : '',
         dauer: mapDauer(p.beginn, p.ende, p.veranstaltungstyp, p.titel, false),
-        ort: mapOrt(p.ort, p.titel, p.raw?.terminInform)
-      });
+        ort: pOrt
+      };
+      if (pConfLink) {
+        reiheItem.online_link = pConfLink;
+      }
+      reiheJeTermin.push(reiheItem);
     }
 
-    courseObj.course.termine.push({
+    const primaryOrt = mapOrt(primary.ort, primary.titel, primary.raw?.terminInform);
+    const primaryConfLink = primaryOrt === 'online' ? extractConferenceLink(primary) : '';
+
+    const primaryTermin = {
       anbieter: mapAnbieter(primary.veranstalter),
       tnr: primary.terminnummer,
       erster_termin: primary.beginn ? primary.beginn.slice(0, 10) : '',
       dauer: mapDauer(primary.beginn, primary.ende, primary.veranstaltungstyp, primary.titel, reiheJeTermin.length > 0),
-      ort: mapOrt(primary.ort, primary.titel, primary.raw?.terminInform),
+      ort: primaryOrt,
       reihe_je_termin: reiheJeTermin
-    });
+    };
+    if (primaryConfLink) {
+      primaryTermin.online_link = primaryConfLink;
+    }
+    courseObj.course.termine.push(primaryTermin);
   }
 
   // C. Einzelveranstaltungen & Parallelangebote einsortieren
@@ -439,14 +607,21 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
 
     const courseObj = getOrCreateCourse(baseTitle, ev, isAbruf);
 
-    courseObj.course.termine.push({
+    const evOrt = mapOrt(ev.ort, ev.titel, ev.raw?.terminInform);
+    const confLink = evOrt === 'online' ? extractConferenceLink(ev) : '';
+
+    const terminObj = {
       anbieter: mapAnbieter(ev.veranstalter),
       tnr: ev.terminnummer,
       erster_termin: ev.beginn ? ev.beginn.slice(0, 10) : '',
       dauer: mapDauer(ev.beginn, ev.ende, ev.veranstaltungstyp, ev.titel, false),
-      ort: mapOrt(ev.ort, ev.titel, ev.raw?.terminInform),
+      ort: evOrt,
       reihe_je_termin: []
-    });
+    };
+    if (confLink) {
+      terminObj.online_link = confLink;
+    }
+    courseObj.course.termine.push(terminObj);
   }
 
   // Termine in jedem Kurs chronologisch sortieren
@@ -465,6 +640,9 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
   };
 
   for (const { category, course } of groupedCourses.values()) {
+    if (!course.termine || course.termine.length === 0) {
+      continue;
+    }
     if (result[category]) {
       result[category].push(course);
     } else {
@@ -475,6 +653,7 @@ function transform({ crawledEvents, existingData, schuljahr = '26/27' }) {
   // Reine Beratungsangebote ohne TNR aus existingData wieder anhängen (z.B. Begleitung von Fachschaften, Individuelle Begleitung)
   for (const [cat, items] of Object.entries(advisoryItems)) {
     for (const item of items) {
+      if (isExcludedItem(item)) continue;
       if (!result[cat].some(c => c.titel === item.titel)) {
         result[cat].push({
           titel: item.titel,
@@ -509,8 +688,15 @@ Verwendung:
 Optionen:
   -i, --input <file>     Gecrawlte Eingabedatei (Standard: "veranstaltungen.json")
   -e, --existing <file>  Redaktionelle Vorlage / weitere Angebote (Standard: "weitere-angebote.json")
-  -o, --output <file>    Zieldatei (Standard: "sj2627.json")
+  -o, --output <file>    Zieldatei (Standard: "fortbildungen.json")
+  -s, --schuljahr <jahr> Schuljahr-Filter (Standard: "26/27")
+  -x, --exclude <tnr>    Terminnummer(n), IDs oder Kurstitel ausschließen (Mehrfachangabe möglich)
   -h, --help             Diese Hilfe anzeigen
+
+Beispiele:
+  node transform-zielinfos.js --exclude "V42P6Z"
+  node transform-zielinfos.js --exclude "V42P6Z" --exclude "LRZE79"
+  node transform-zielinfos.js -x "V42P6Z, LRZE79"
 `);
     process.exit(0);
   }
@@ -546,8 +732,9 @@ Optionen:
   }
 
   const schuljahr = values.schuljahr || '26/27';
+  const exclude = values.exclude || [];
   console.log(`Transformiere Termine für Schuljahr ${schuljahr} (aus insgesamt ${crawledEvents.length} Terminen)...`);
-  const transformed = transform({ crawledEvents, existingData, schuljahr });
+  const transformed = transform({ crawledEvents, existingData, schuljahr, exclude });
 
   const stats = Object.entries(transformed)
     .map(([cat, list]) => `${cat}: ${list.length} Kurse`)
@@ -565,6 +752,8 @@ if (require.main === module) {
   module.exports = {
     transform,
     normalizeTitle,
+    parseExcludeList,
+    extractConferenceLink,
     mapAnbieter,
     mapOrt,
     mapDauer,

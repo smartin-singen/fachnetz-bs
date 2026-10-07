@@ -20,7 +20,12 @@ const options = {
     type: 'string',
     short: 'q',
     multiple: true,
-    default: ['LFTMath319!']
+    default: ['LFTMath319!', 'LFSMath319!']
+  },
+  stichwort: {
+    type: 'string',
+    short: 'w',
+    multiple: true
   },
   output: {
     type: 'string',
@@ -147,6 +152,9 @@ function normalizeEvent(event, contacts = []) {
       titel: cleanText(event.veranstaltung.titel),
       status: event.veranstaltung.status?.name || null
     } : null,
+    stichworte: Array.isArray(event.stichworte)
+      ? (event.stichworte = event.stichworte.map(s => (typeof s === 'string' ? s.trim() : s)).filter(Boolean))
+      : [],
     // Vollständige Rohdaten für maximale Detailtiefe
     raw: event
   };
@@ -442,7 +450,8 @@ Verwendung:
   npm run crawl
 
 Optionen:
-  -q, --query <string>        Suchbegriff (kann mehrfach angegeben oder kommagetrennt werden)
+  -q, --query <string>        Suchbegriff / Stichwort (kann mehrfach angegeben oder kommagetrennt werden)
+  -w, --stichwort <string>    Synonym für --query
   -o, --output <file>         Zieldatei für JSON-Ausgabe (Standard: "veranstaltungen.json")
   -l, --limit <number>        Maximale Anzahl der zu verarbeitenden Termine (Standard: alle)
   -c, --concurrency <number>  Anzahl paralleler Detail-Requests im API-Modus (Standard: 5)
@@ -452,21 +461,25 @@ Optionen:
 
 Beispiele:
   node crawl-lfb.js
-  node crawl-lfb.js -q "LFTMath319!" -q "Mathematik"
-  node crawl-lfb.js --query "LFTMath319!, Mathematik" --output ergebnis.json
-  node crawl-lfb.js LFTMath319! Mathematik
+  node crawl-lfb.js -q "LFTMath319!" -q "LFSMath319!"
+  node crawl-lfb.js --stichwort "LFTMath319!, LFSMath319!" --output veranstaltungen.json
+  node crawl-lfb.js LFTMath319! LFSMath319!
   node crawl-lfb.js --limit 5 --browser
   node crawl-lfb.js --limit 3 --stdout | jq .
 `);
     process.exit(0);
   }
 
-  const rawQueries = Array.isArray(values.query) ? values.query : [values.query || 'LFTMath319!'];
-  const queries = [
-    ...rawQueries.flatMap(q => q.split(',')),
+  const rawQueries = [
+    ...(Array.isArray(values.query) ? values.query : (values.query ? [values.query] : [])),
+    ...(Array.isArray(values.stichwort) ? values.stichwort : (values.stichwort ? [values.stichwort] : [])),
     ...(positionals || [])
-  ].map(s => s.trim()).filter(Boolean);
-  const uniqueQueries = [...new Set(queries.length > 0 ? queries : ['LFTMath319!'])];
+  ];
+  const queries = rawQueries
+    .flatMap(q => (typeof q === 'string' ? q.split(',') : []))
+    .map(s => s.trim())
+    .filter(Boolean);
+  const uniqueQueries = [...new Set(queries.length > 0 ? queries : ['LFTMath319!', 'LFSMath319!'])];
 
   const limit = values.limit ? parseInt(values.limit, 10) : null;
   const concurrency = values.concurrency ? parseInt(values.concurrency, 10) : 5;

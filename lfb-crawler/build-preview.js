@@ -146,6 +146,7 @@ const htmlContent = `<!DOCTYPE html>
         }
         .lfb td {
             border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
         }
         .lfb tr:hover {
             background-color: #f8fafc;

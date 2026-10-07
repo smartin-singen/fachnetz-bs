@@ -42,8 +42,10 @@ next-env.d.ts
 
 mathe-arbeitsheft
 navigation
+moodle-profile-merge
 
 lfb-crawler/veranstaltungen.json
 lfb-crawler/preview.html
 lfb-crawler/fortbildungen.json
+lfb-crawler/angebote.json
 lfb-crawler/weitere-angebote.json

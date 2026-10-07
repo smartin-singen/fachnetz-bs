@@ -137,7 +137,7 @@ function formatOrtCell(ort, link) {
     }
     const escaped = escapeHTML(ort);
     if (ort.toLowerCase() === 'online' && link) {
-        return `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; font-weight: 500;" title="Online-Konferenzraum öffnen">${escaped}</a>`;
+        return `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; font-weight: bold;" title="Online-Konferenzraum öffnen">${escaped}</a>`;
     }
     return escaped;
 }
@@ -155,16 +155,27 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
 
     const normSearch = (searchQuery || '').trim().toLowerCase();
 
+    // Fortbildungen: Zentral und regional nicht mehr trennen, sondern gemeinsam anzeigen
+    const alleFortbildungen = [
+        ...(jsonData.fortbildungen || []),
+        ...((!jsonData.fortbildungen && jsonData.zentraleFortbildungen) ? jsonData.zentraleFortbildungen : []),
+        ...((!jsonData.fortbildungen && jsonData.regionaleFortbildungen) ? jsonData.regionaleFortbildungen : [])
+    ];
+    const uniqueFortbildungen = [];
+    const seenTitles = new Set();
+    for (const item of alleFortbildungen) {
+        if (!seenTitles.has(item.titel)) {
+            seenTitles.add(item.titel);
+            uniqueFortbildungen.push(item);
+        }
+    }
+    uniqueFortbildungen.sort((a, b) => a.titel.localeCompare(b.titel, 'de'));
+
     const groupedData = {
         "Fortbildungen": {
-            id: 'zsl-ueber',
+            id: 'zsl-fortbildungen',
             isAbruf: false,
-            data: jsonData.zentraleFortbildungen || []
-        },
-        "Schulnahe Angebote": {
-            id: 'zsl-nahe',
-            isAbruf: false,
-            data: jsonData.regionaleFortbildungen || []
+            data: uniqueFortbildungen
         },
         "Abrufangebote": {
             id: 'zsl-intern',
@@ -178,8 +189,58 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
         }
     };
 
-    let html = '';
+    let html = `
+    <style>
+    .lfb-desc-wrapper {
+        margin-bottom: 0.85rem;
+    }
+    .lfb-desc-text {
+        line-height: 1.6;
+        color: #4a5568;
+        font-size: 0.95rem;
+        white-space: pre-line;
+        margin-bottom: 0;
+        transition: color 0.15s ease;
+    }
+    .lfb-desc-text.has-toggle {
+        cursor: pointer;
+    }
+    .lfb-desc-text.collapsed {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .lfb-desc-text.expanded {
+        display: block;
+    }
+    .lfb-desc-action {
+        margin-top: 4px;
+        min-height: 20px;
+    }
+    .lfb-desc-toggle {
+        background: none;
+        border: none;
+        padding: 0;
+        color: #2b6cb0;
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        line-height: 1.4;
+    }
+    .lfb-desc-toggle:hover {
+        color: #1a4971;
+        text-decoration: underline;
+    }
+    </style>
+    `;
     let totalRendered = 0;
+    let descCounter = 0;
 
     for (const [typ, gruppe] of Object.entries(groupedData)) {
         if (!gruppe.data || gruppe.data.length === 0) continue;
@@ -235,14 +296,23 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
             categoryHtml += `<div class="card-body p-4">`;
 
             // Titel
-            categoryHtml += `<h4 class="card-title text-primary" style="margin-bottom: 1rem; font-weight: 600;">${escapeHTML(fortbildung.titel)}</h4>`;
+            categoryHtml += `<h4 class="card-title text-dark" style="margin-bottom: 1rem; font-weight: 700; color: #1e293b;">${escapeHTML(fortbildung.titel)}</h4>`;
 
             // Kurzbeschreibung & Bild (Responsives Flex-Layout mit automatischem Zeilenumbruch auf Mobile)
             categoryHtml += `<div class="lfb-content-row d-flex flex-wrap align-items-start" style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px;">`;
 
             categoryHtml += `<div class="lfb-text-col" style="flex: 1 1 300px; min-width: 250px;">`;
             if (fortbildung.kurzbeschreibung?.text) {
-                categoryHtml += `<p class="card-text text-muted" style="line-height: 1.6; margin-bottom: 0.75rem;">${escapeHTML(fortbildung.kurzbeschreibung.text)}</p>`;
+                descCounter++;
+                const descId = `lfb-desc-${descCounter}`;
+                categoryHtml += `
+                    <div class="lfb-desc-wrapper">
+                        <div class="lfb-desc-text collapsed" id="${descId}" title="Klicken zum Auf- oder Zuklappen">${escapeHTML(fortbildung.kurzbeschreibung.text)}</div>
+                        <div class="lfb-desc-action">
+                            <button type="button" class="lfb-desc-toggle" data-target="${descId}" style="display: none;">mehr ▾</button>
+                        </div>
+                    </div>
+                `;
             }
             if (fortbildung.kurzbeschreibung?.link) {
                 categoryHtml += `<p class="mb-2"><a href="${escapeHTML(fortbildung.kurzbeschreibung.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">${escapeHTML(fortbildung.kurzbeschreibung.link)}</a></p>`;
@@ -285,15 +355,22 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
                                  <tbody>`;
 
                 matchedTermine.forEach(termin => {
-                    const tnrLink = termin.tnr
-                        ? `<a href="https://lfbo.kultus-bw.de/lfb/termine/${encodeURIComponent(termin.tnr)}" target="_blank" rel="noopener noreferrer" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-weight: 600; text-decoration: underline; letter-spacing: 0.5px;" title="In LFB-Online öffnen">${escapeHTML(termin.tnr)}</a>`
-                        : '<span class="text-muted">–</span>';
+                    const hasDirectVikoLink = Boolean(termin.online_link || (termin.ort && termin.ort.toLowerCase() === 'online' && (termin.link || termin.online_link)));
+
+                    let tnrLink = '<span class="text-muted">–</span>';
+                    if (termin.tnr) {
+                        if (hasDirectVikoLink) {
+                            tnrLink = `<span class="text-muted" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-weight: 500; letter-spacing: 0.5px;" title="Direkter Zugang über Konferenzraum (Spalte Ort)">${escapeHTML(termin.tnr)}</span>`;
+                        } else {
+                            tnrLink = `<a href="https://lfbo.kultus-bw.de/lfb/termine/${encodeURIComponent(termin.tnr)}" target="_blank" rel="noopener noreferrer" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-weight: 600; text-decoration: underline; letter-spacing: 0.5px;" title="In LFB-Online öffnen">${escapeHTML(termin.tnr)}</a>`;
+                        }
+                    }
 
                     categoryHtml += `<tr>
-                        ${hasAnbieter ? `<td class="lfb-anbieter align-middle" style="padding: 8px; white-space: nowrap;">${escapeHTML(termin.anbieter || '–')}</td>` : ''}
-                        <td class="lfb-tnr align-middle" style="padding: 8px; white-space: nowrap;">${tnrLink}</td>
-                        <td class="lfb-erster-termin align-middle" style="padding: 8px;">
-                            <div><span style="font-weight: 600; white-space: nowrap;">${getTerminText(termin.erster_termin)}</span>${termin.thema ? ` <span style="font-weight: 500; color: #2b6cb0;">– ${escapeHTML(termin.thema)}</span>` : ''}</div>`;
+                        ${hasAnbieter ? `<td class="lfb-anbieter align-top" style="padding: 8px; vertical-align: top; white-space: nowrap;">${escapeHTML(termin.anbieter || '–')}</td>` : ''}
+                        <td class="lfb-tnr align-top" style="padding: 8px; vertical-align: top; white-space: nowrap;">${tnrLink}</td>
+                        <td class="lfb-erster-termin align-top" style="padding: 8px; vertical-align: top;">
+                            <div><span style="font-weight: 600; white-space: nowrap;">${getTerminText(termin.erster_termin)}</span>${termin.thema ? ` <span style="font-weight: 500; color: #2d3748;">– ${escapeHTML(termin.thema)}</span>` : ''}</div>`;
 
                     // Folgetermine strukturiert auflisten
                     if (Array.isArray(termin.reihe_je_termin) && termin.reihe_je_termin.length > 0) {
@@ -309,7 +386,7 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
                     categoryHtml += `</td>`;
 
                     // Dauer
-                    categoryHtml += `<td class="lfb-dauer align-middle" style="padding: 8px; white-space: nowrap;">
+                    categoryHtml += `<td class="lfb-dauer align-top" style="padding: 8px; vertical-align: top; white-space: nowrap;">
                         <div>${escapeHTML(termin.dauer || '–')}</div>`;
                     if (Array.isArray(termin.reihe_je_termin) && termin.reihe_je_termin.length > 0) {
                         termin.reihe_je_termin.forEach(reihe => {
@@ -324,7 +401,7 @@ function generateHTMLFromJSON(jsonData, selectedAnbieter = '', selectedOrt = '',
                     categoryHtml += `</td>`;
 
                     // Ort
-                    categoryHtml += `<td class="lfb-ort align-middle" style="padding: 8px; white-space: nowrap;">
+                    categoryHtml += `<td class="lfb-ort align-top" style="padding: 8px; vertical-align: top; white-space: nowrap;">
                         <div>${formatOrtCell(termin.ort, termin.online_link || termin.link)}</div>`;
                     if (Array.isArray(termin.reihe_je_termin) && termin.reihe_je_termin.length > 0) {
                         termin.reihe_je_termin.forEach(reihe => {
@@ -513,6 +590,61 @@ async function applyFilters() {
 
     const filteredHTML = generateHTMLFromJSON(fortbildungData, selectedAnbieter, selectedOrt, selectedTag, showCompleted, searchQuery);
     container.innerHTML = filteredHTML;
+    updateDescToggles();
+}
+
+/**
+ * Aktualisiert die Sichtbarkeit der "mehr"-Schaltflächen basierend auf der tatsächlichen Höhe (3 Zeilen)
+ */
+function updateDescToggles() {
+    if (typeof document === 'undefined') return;
+    requestAnimationFrame(() => {
+        document.querySelectorAll('.lfb-desc-wrapper').forEach(wrapper => {
+            const textEl = wrapper.querySelector('.lfb-desc-text');
+            const btn = wrapper.querySelector('.lfb-desc-toggle');
+            if (textEl && btn) {
+                if (textEl.classList.contains('collapsed')) {
+                    // Wenn der Text mehr als 3 Zeilen einnimmt, Schaltfläche anzeigen und Text als klickbar markieren
+                    if (textEl.scrollHeight > textEl.clientHeight + 3) {
+                        textEl.classList.add('has-toggle');
+                        btn.style.display = 'inline-flex';
+                        btn.textContent = 'mehr ▾';
+                    } else {
+                        textEl.classList.remove('has-toggle');
+                        btn.style.display = 'none';
+                    }
+                }
+            }
+        });
+    });
+}
+
+// Globaler Event-Listener für das Ein-/Ausklappen (Klick auf Button oder direkt auf den Text)
+if (typeof window !== 'undefined' && !window.__lfbDescToggleRegistered) {
+    window.__lfbDescToggleRegistered = true;
+    document.addEventListener('click', function (e) {
+        const toggleBtn = e.target.closest('.lfb-desc-toggle');
+        const descText = e.target.closest('.lfb-desc-text.has-toggle');
+        if (toggleBtn || descText) {
+            const wrapper = (toggleBtn || descText).closest('.lfb-desc-wrapper');
+            const descEl = wrapper?.querySelector('.lfb-desc-text');
+            const btn = wrapper?.querySelector('.lfb-desc-toggle');
+            if (descEl && btn && btn.style.display !== 'none') {
+                e.preventDefault();
+                const isCollapsed = descEl.classList.contains('collapsed');
+                if (isCollapsed) {
+                    descEl.classList.remove('collapsed');
+                    descEl.classList.add('expanded');
+                    btn.textContent = 'weniger ▴';
+                } else {
+                    descEl.classList.remove('expanded');
+                    descEl.classList.add('collapsed');
+                    btn.textContent = 'mehr ▾';
+                }
+            }
+        }
+    });
+    window.addEventListener('resize', updateDescToggles);
 }
 
 /**

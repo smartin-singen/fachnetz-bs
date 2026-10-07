@@ -5,9 +5,11 @@
   "main": "crawl-lfb.js",
   "scripts": {
     "start": "node crawl-lfb.js",
-    "crawl": "node crawl-lfb.js --output veranstaltungen.json",
-    "crawl:browser": "node crawl-lfb.js --browser --output veranstaltungen.json",
-    "transform": "node transform-zielinfos.js",
+    "crawl": "node crawl-lfb.js -q \"LFTMath319!, LFSMath319!\" --output veranstaltungen.json",
+    "crawl:browser": "node crawl-lfb.js -q \"LFTMath319!, LFSMath319!\" --browser --output veranstaltungen.json",
+    "transform": "node transform-zielinfos.js -q LFTMath319! -o fortbildungen.json && node transform-zielinfos.js -q LFSMath319! -o angebote.json",
+    "transform:fortbildungen": "node transform-zielinfos.js -q LFTMath319! -o fortbildungen.json",
+    "transform:angebote": "node transform-zielinfos.js -q LFSMath319! -o angebote.json",
     "build:preview": "node build-preview.js",
     "preview": "node build-preview.js && xdg-open preview.html"
   },

@@ -89,17 +89,21 @@ node crawl-lfb.js --browser
 Führt semantische Bereinigungen durch, aggregiert modulare Reihen (Impulsreihen) und bündelt regionale Parallelangebote. Verbindet die gecrawlten LFB-Termine mit den redaktionellen Kurzbeschreibungen und didaktischen Tags aus `weitere-angebote.json`:
 
 ```bash
+# Standard: erzeugt fortbildungen.json (LFTMath319!) und angebote.json (LFSMath319!):
 npm run transform
-# Liest veranstaltungen.json + weitere-angebote.json und erzeugt fortbildungen.json
+
+# Gezielt einzelne Dateien erzeugen:
+npm run transform:fortbildungen
+npm run transform:angebote
+
+# Oder mit individuellem Stichwort / Zieldatei:
+node transform-zielinfos.js -q "LFTMath319!" -o fortbildungen.json
+node transform-zielinfos.js -q "LFSMath319!" -o angebote.json
+node transform-zielinfos.js --stichwort "LFTMath319!"
 
 # Termine oder Kurse ausschließen (--exclude unterstützt Mehrfachangabe):
-node transform-zielinfos.js --exclude "V42P6Z"
-node transform-zielinfos.js --exclude "V42P6Z" --exclude "LRZE79"
-node transform-zielinfos.js -x "V42P6Z, LRZE79"
-npm run transform -- --exclude "V42P6Z"
-
-# Oder mit individuellen Parametern:
-node transform-zielinfos.js -i veranstaltungen.json -e weitere-angebote.json -o fortbildungen.json
+node transform-zielinfos.js -q "LFTMath319!" --exclude "V42P6Z"
+node transform-zielinfos.js -q "LFTMath319!" -x "V42P6Z, LRZE79"
 ```
 
 ---
